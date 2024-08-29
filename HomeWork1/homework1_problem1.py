@@ -1,5 +1,5 @@
 import numpy as np
-
+from numpy import linalg as LA
 
 # def problem_1a (A, B):
 #     return A + B
@@ -16,16 +16,16 @@ import numpy as np
 # def problem_1e (A, i):
 #     return np.sum(A[i,::2])
 
-def problem_1f(A, c, d):
-    return np.mean(A[np.nonzero((d >= A) & (A >=c))])
-
+# def problem_1f(A, c, d):
+#     return np.mean(A[np.nonzero((d >= A) & (A >=c))])
 
 # def problem_1g (A, k):
-#     return ...
-#
-# def problem_1h (x, k, m, s):
-#     return ...
-#
+#     eigenvalues, eigenvectors = LA.eig(A)
+#     return eigenvectors[:, np.argsort(-np.abs(eigenvalues))[:k]]
+
+def problem_1h (x, k, m, s):
+    return
+
 # def problem_1i (A):
 #     return ...
 #
@@ -39,8 +39,8 @@ def problem_1f(A, c, d):
 #     return ...
 
 
-A = np.array([[1, 4, 5, 12],
-              [5, 8, 9, 0],
-              [6, 7, 11, 19]])
+A = np.array([[1, 4, 5],
+              [5, 8, 9],
+              [6, 7, 11]])
 
-print(problem_1f(A, 1, 10))
+print(problem_1h(A, 2))
