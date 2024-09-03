@@ -31,7 +31,6 @@ def train_age_regressor ():
     #Xte, yte = standardize(Xte, yte)
 
 
-
     def cost_function(X, y, w, b):
         n = len(y)
         y_hat = X.dot(w) + b
