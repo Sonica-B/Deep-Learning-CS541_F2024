@@ -1,132 +1,139 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-def load_and_preprocess_data():
-    # Load and reshape data
-    X_tr = np.reshape(np.load("age_regression_Xtr.npy"), (-1, 48*48))
-    y_tr = np.load("age_regression_ytr.npy")
-    X_te = np.reshape(np.load("age_regression_Xte.npy"), (-1, 48*48))
-    y_te = np.load("age_regression_yte.npy")
+# Load data
+X_tr = np.reshape(np.load("age_regression_Xtr.npy"), (-1, 48 * 48))
+ytr = np.load("age_regression_ytr.npy")
+X_te = np.reshape(np.load("age_regression_Xte.npy"), (-1, 48 * 48))
+yte = np.load("age_regression_yte.npy")
 
-    # Remove NaN values
-    valid_train_indices = ~np.isnan(y_tr)
-    X_tr = X_tr[valid_train_indices]
-    y_tr = y_tr[valid_train_indices]
+# #Check for NaN values
+# if np.isnan(X_tr).any() or np.isnan(ytr).any() or np.isnan(X_te).any() or np.isnan(yte).any():
+#     raise ValueError("Data contains NaN values.")
 
-    valid_test_indices = ~np.isnan(y_te)
-    X_te = X_te[valid_test_indices]
-    y_te = y_te[valid_test_indices]
 
-    # Normalize the features for numerical stability
-    X_tr = (X_tr - np.mean(X_tr, axis=0)) / np.std(X_tr, axis=0)
-    X_te = (X_te - np.mean(X_te, axis=0)) / np.std(X_te, axis=0)
+# Data Standardization
+def standardize(X, y):
+    X = (X - np.mean(X, axis=0)) / np.std(X, axis=0)
+    y = (y - np.mean(y)) / np.std(y)
+    return X, y
 
-    # Split the training data into training and validation sets (80-20 split)
-    split_index = int(0.8 * len(X_tr))
-    X_train, X_val = X_tr[:split_index], X_tr[split_index:]
-    y_train, y_val = y_tr[:split_index], y_tr[split_index:]
 
-    return X_train, y_train, X_val, y_val, X_te, y_te
+# Split data
+split_index = int(0.8 * len(X_tr))
+X_train, X_val = X_tr[:split_index], X_tr[split_index:]
+y_train, y_val = ytr[:split_index], ytr[split_index:]
 
-def compute_cost(X, y, w, b):
-    y_pred = X.dot(w) + b
-    mse = np.mean((y_pred - y) ** 2) / 2
-    return mse
+# Standardize the data
+X_train, y_train = standardize(X_train, y_train)
+X_val, y_val = standardize(X_val, y_val)
+X_te, yte = standardize(X_te, yte)
 
-def compute_gradients(X, y, w, b):
+
+
+def cost_function(X, y, w, b):
     n = len(y)
-    y_pred = X.dot(w) + b
-    dw = (1 / n) * X.T.dot(y_pred - y)
-    db = (1 / n) * np.sum(y_pred - y)
-    return dw, db
+    y_hat = X.dot(w) + b
+    cost = (1 / (2 * n)) * np.sum(np.square(y_hat - y))
+    return cost
 
-def train_sgd(X_train, y_train, X_val, y_val, learning_rate=0.001, batch_size=64, epochs=100, decay=0.99):
-    # Initialize parameters
-    w = np.random.randn(X_train.shape[1]) * 0.01
+
+def gradient(X, y, w, b):
+    n = len(y)
+    y_hat = X.dot(w) + b
+    gw = (1 / n) * X.T.dot(y_hat - y)
+    gb = (1 / n) * np.sum(y_hat - y)
+    return gw, gb
+
+
+def stochastic_gradient_descent(X_train, y_train, X_val, y_val, learning_rate, batch_size, epochs):
+
+    w =np.zeros(X_train.shape[1])
     b = 0.0
-    best_val_cost = float('inf')
-    best_w, best_b = w, b
-
-    history = {'train_cost': [], 'val_cost': []}
+    train_cost_history = []
+    val_cost_history = []
 
     for epoch in range(epochs):
-        # Shuffle data
+        # Shuffle training data
         indices = np.random.permutation(len(y_train))
-        X_train, y_train = X_train[indices], y_train[indices]
+        X_shuffled, y_shuffled = X_train[indices], y_train[indices]
 
         # Mini-batch training
         for i in range(0, len(y_train), batch_size):
-            X_batch = X_train[i:i + batch_size]
-            y_batch = y_train[i:i + batch_size]
+            Xi = X_shuffled[i:i + batch_size]
+            Yi = y_shuffled[i:i + batch_size]
 
             # Compute gradients
-            dw, db = compute_gradients(X_batch, y_batch, w, b)
+            gw, gb = gradient(Xi, Yi, w, b)
 
             # Update parameters
-            w -= learning_rate * dw
-            b -= learning_rate * db
+            w -= learning_rate * gw
+            b -= learning_rate * gb
 
-        # Compute and store cost for training and validation
-        train_cost = compute_cost(X_train, y_train, w, b)
-        val_cost = compute_cost(X_val, y_val, w, b)
-        history['train_cost'].append(train_cost)
-        history['val_cost'].append(val_cost)
+        # Compute costs for both training and validation
+        train_cost = cost_function(X_train, y_train, w, b)
+        val_cost = cost_function(X_val, y_val, w, b)
 
-        # Learning rate decay
-        learning_rate *= decay
+        train_cost_history.append(train_cost)
+        val_cost_history.append(val_cost)
 
-        # Update best parameters if validation cost improves
-        if val_cost < best_val_cost:
-            best_val_cost = val_cost
-            best_w, best_b = w, b
+    return w, b, train_cost_history, val_cost_history
 
-        print(f'Epoch {epoch+1}/{epochs} - Train Cost: {train_cost:.4f}, Val Cost: {val_cost:.4f}')
 
-    return best_w, best_b, history
+def hyperparameter_tuning(X_train, y_train, X_val, y_val, learning_rates, mini_batch_sizes, epochs):
 
-def plot_costs(history):
-    plt.figure(figsize=(10, 6))
-    plt.plot(history['train_cost'], label='Training Cost')
-    plt.plot(history['val_cost'], label='Validation Cost')
-    plt.xlabel('Epoch')
-    plt.ylabel('MSE Cost')
-    plt.title('Training and Validation Cost over Epochs')
-    plt.legend()
-    plt.show()
-
-def train_age_regressor():
-    # Load and preprocess data
-    X_train, y_train, X_val, y_val, X_te, y_te = load_and_preprocess_data()
-
-    # Hyperparameter tuning
     best_val_cost = float('inf')
-    best_params = {}
-    best_history = {}
-
-    learning_rates = [0.0001, 0.00005, 0.00001]
-    batch_sizes = [16, 32, 64]
-    epochs = 200  # Increased number of epochs for better convergence
-    decays = 0.99  # Adjusted decay factors
+    best_w = None
+    best_b = None
+    best_hyperparams = None
+    best_train_cost_history = []
+    best_val_cost_history = []
 
     for lr in learning_rates:
-        for batch_size in batch_sizes:
-            w, b, history = train_sgd(X_train, y_train, X_val, y_val, learning_rate=lr, batch_size=batch_size, epochs=epochs)
+        for batch_size in mini_batch_sizes:
+            w, b, train_cost_history, val_cost_history = stochastic_gradient_descent(
+                X_train, y_train, X_val, y_val, lr, batch_size, epochs
+            )
 
-            val_cost = history['val_cost'][-1]
+            val_cost = val_cost_history[-1]  # Use the last validation cost
+
             if val_cost < best_val_cost:
                 best_val_cost = val_cost
-                best_params = {'learning_rate': lr, 'batch_size': batch_size}
-                best_history = history
+                best_w = w
+                best_b = b
+                best_hyperparams = (lr, batch_size, epochs)
+                best_train_cost_history = train_cost_history
+                best_val_cost_history = val_cost_history
 
-    print("Best Hyperparameters:", best_params)
+    return best_w, best_b, best_val_cost, best_hyperparams, best_train_cost_history, best_val_cost_history
 
-    # Plotting the training and validation cost over epochs
-    plot_costs(best_history)
 
-    # Evaluate on test set
-    best_w, best_b, _ = train_sgd(X_train, y_train, X_val, y_val, learning_rate=best_params['learning_rate'], batch_size=best_params['batch_size'], epochs=epochs)
-    test_cost = compute_cost(X_te, y_te, best_w, best_b)
-    print(f'Test MSE: {test_cost:.4f}')
+# Define hyperparameters
+learning_rates = [0.001, 0.0001, 0.00001]
+mini_batch_sizes = [16, 32, 64, 128]
+epochs = 200
 
-# Run the function
-train_age_regressor()
+# Hyperparameter tuning
+best_w, best_b, best_val_cost, best_hyperparams, train_cost_history, val_cost_history = hyperparameter_tuning(
+    X_train, y_train, X_val, y_val, learning_rates, mini_batch_sizes, epochs
+)
+
+print(
+    f'Best Hyperparameters: Learning Rate = {best_hyperparams[0]}, Mini-batch Size = {best_hyperparams[1]}, Epochs = {best_hyperparams[2]}')
+print(f'Best Validation Cost: {best_val_cost}')
+
+# Evaluate on the test set
+test_cost = cost_function(X_te, yte, best_w, best_b)
+print(f'Test Set Cost: {test_cost}')
+
+# Plotting training and validation cost history
+plt.plot(train_cost_history, label='Training Cost')
+plt.plot(val_cost_history, label='Validation Cost')
+plt.xlabel('Epochs')
+plt.ylabel('Cost')
+plt.title('Training and Validation Cost Over Epochs')
+plt.legend()
+plt.show()
+
+print('Final weights:', best_w)
+print('Final bias:', best_b)
