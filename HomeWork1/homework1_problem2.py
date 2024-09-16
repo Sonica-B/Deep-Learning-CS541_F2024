@@ -13,11 +13,11 @@ def train_age_regressor ():
         raise ValueError("Data contains NaN values.")
 
 
-    # Data Standardization
-    def standardize(X, y):
-        X = (X - np.mean(X, axis=0)) / np.std(X, axis=0)
-        y = (y - np.mean(y)) / np.std(y)
-        return X, y
+    # #Data Standardization
+    # def standardize(X, y):
+    #     X = (X - np.mean(X, axis=0)) / np.std(X, axis=0)
+    #     y = (y - np.mean(y)) / np.std(y)
+    #     return X, y
 
 
     # Split data
@@ -25,28 +25,28 @@ def train_age_regressor ():
     X_train, X_val = X_tr[:split_index], X_tr[split_index:]
     y_train, y_val = y_tr[:split_index], y_tr[split_index:]
 
-    # Standardize the data
+    # #Standardize the data
     # X_train, y_train = standardize(X_train, y_train)
     # X_val, y_val = standardize(X_val, y_val)
-    #Xte, yte = standardize(Xte, yte)
+    # Xte, yte = standardize(Xte, yte)
 
 
-    def cost_function(X, y, w, b):
+    def cost_function(X,y,w,b):
         n = len(y)
         y_hat = X.dot(w) + b
-        cost = (1 / (2 * n)) * np.sum(np.square(y_hat - y))
+        cost = (1/(2*n)) * np.sum(np.square(y_hat-y))
         return cost
 
 
-    def gradient(X, y, w, b):
+    def gradient(X,y,w,b):
         n = len(y)
         y_hat = X.dot(w) + b
-        gw = (1 / n) * X.T.dot(y_hat - y)
-        gb = (1 / n) * np.sum(y_hat - y)
+        gw = (1/n) * X.T.dot(y_hat-y)
+        gb = (1/n) * np.sum(y_hat-y)
         return gw, gb
 
 
-    def stochastic_gradient_descent(X_train, y_train, X_val, y_val, learning_rate, batch_size, epochs):
+    def stochastic_gradient_descent(X_train, y_train, X_val, y_val, e, batch_size, epochs):
 
         w =np.zeros(X_train.shape[1])
         b = 0.0
@@ -54,23 +54,23 @@ def train_age_regressor ():
         val_cost_history = []
 
         for epoch in range(epochs):
-            # Shuffle training data
-            indices = np.random.permutation(len(y_train))
-            X_shuffled, y_shuffled = X_train[indices], y_train[indices]
+            # Shuffling data
+            index = np.random.permutation(len(y_train))
+            X_shuff, y_shuff = X_train[index], y_train[index]
 
             # Mini-batch training
             for i in range(0, len(y_train), batch_size):
-                Xi = X_shuffled[i:i + batch_size]
-                Yi = y_shuffled[i:i + batch_size]
+                Xi = X_shuff[i:i + batch_size]
+                Yi = y_shuff[i:i + batch_size]
 
                 # Compute gradients
                 gw, gb = gradient(Xi, Yi, w, b)
 
                 # Update parameters
-                w -= learning_rate * gw
-                b -= learning_rate * gb
+                w -= e * gw
+                b -= e * gb
 
-            # Compute costs for both training and validation
+            # Compute cost
             train_cost = cost_function(X_train, y_train, w, b)
             val_cost = cost_function(X_val, y_val, w, b)
 
@@ -80,50 +80,49 @@ def train_age_regressor ():
         return w, b, train_cost_history, val_cost_history
 
 
-    def hyperparameter_tuning(X_train, y_train, X_val, y_val, learning_rates, mini_batch_sizes, epochs):
+    def hyperparameter_tuning(X_train, y_train, X_val, y_val, e, mini_batches, epochs):
 
-        best_val_cost = float('inf')
-        best_w = None
-        best_b = None
-        best_hyperparams = None
-        best_train_cost_history = []
-        best_val_cost_history = []
+        opt_val_cost = float('inf')
+        opt_w = None
+        opt_b = None
+        opt_hyperparams = None
+        opt_train_cost_history = []
+        opt_val_cost_history = []
 
-        for lr in learning_rates:
-            for batch_size in mini_batch_sizes:
+        for lr in e:
+            for batch_size in mini_batches:
                 w, b, train_cost_history, val_cost_history = stochastic_gradient_descent(
                     X_train, y_train, X_val, y_val, lr, batch_size, epochs
                 )
 
                 val_cost = val_cost_history[-1]  # Use the last validation cost
 
-                if val_cost < best_val_cost:
-                    best_val_cost = val_cost
-                    best_w = w
-                    best_b = b
-                    best_hyperparams = (lr, batch_size, epochs)
-                    best_train_cost_history = train_cost_history
-                    best_val_cost_history = val_cost_history
+                if val_cost < opt_val_cost:
+                    opt_val_cost = val_cost
+                    opt_w = w
+                    opt_b = b
+                    opt_hyperparams = (lr, batch_size, epochs)
+                    opt_train_cost_history = train_cost_history
+                    opt_val_cost_history = val_cost_history
 
-        return best_w, best_b, best_val_cost, best_hyperparams, best_train_cost_history, best_val_cost_history
+        return opt_w, opt_b, opt_val_cost, opt_hyperparams, opt_train_cost_history, opt_val_cost_history
 
 
     # Define hyperparameters
-    learning_rates = [0.001, 0.0001, 0.00001, 0.000001]
-    mini_batch_sizes = [64, 128, 256]
-    epochs = 600
+    e = [0.001, 0.0001, 0.00001, 0.000001]
+    mini_batches = [64, 128, 256]
+    epochs = 300
 
     # Hyperparameter tuning
-    best_w, best_b, best_val_cost, best_hyperparams, train_cost_history, val_cost_history = hyperparameter_tuning(
-        X_train, y_train, X_val, y_val, learning_rates, mini_batch_sizes, epochs
+    opt_w, opt_b, opt_val_cost, opt_hyperparams, train_cost_history, val_cost_history = hyperparameter_tuning(
+        X_train, y_train, X_val, y_val, e, mini_batches, epochs
     )
 
-    print(
-        f'Best Hyperparameters: Learning Rate = {best_hyperparams[0]}, Mini-batch Size = {best_hyperparams[1]}, Epochs = {best_hyperparams[2]}')
-    print(f'Best Validation Cost: {best_val_cost}')
+    print(f'Best Hyper Parameters Learning Rate = {opt_hyperparams[0]}, Mini-batch Size = {opt_hyperparams[1]}, Epochs = {opt_hyperparams[2]}')
+    print(f'Best Validation Cost: {opt_val_cost}')
 
-    # Evaluate on the test set
-    test_cost = cost_function(Xte, yte, best_w, best_b)
+    # Test set
+    test_cost = cost_function(Xte, yte, opt_w, opt_b)
     print(f'Test Set Cost: {test_cost}')
 
     # Plotting training and validation cost history
@@ -135,8 +134,11 @@ def train_age_regressor ():
     plt.legend()
     plt.show()
 
-    print('Final weights:', best_w)
-    print('Final bias:', best_b)
+    print('Final weights:', opt_w)
+    print('Final bias:', opt_b)
+
+    print(f'Cost values of Training Dataset of last 10 iterations: {train_cost_history[-10:]}')
+
 
 
 
