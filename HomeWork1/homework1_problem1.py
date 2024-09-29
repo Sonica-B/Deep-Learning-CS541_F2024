@@ -1,6 +1,7 @@
 import numpy as np
 from numpy import linalg as LA
 
+<<<<<<< HEAD
 def problem_1a (A, B):
     return (A + B)
 
@@ -69,3 +70,48 @@ print("\n 1k.",problem_1k(D[0],5))
 X = np.array([[1, 3, 5], [2, 4, 6]])  # shape: 2x3
 Y = np.array([[7, 9, 11, 13], [8, 10, 12, 14]])  # shape: 2x4
 print("\n 1k.",problem_1l(X, Y)) # shape: 3x4
+=======
+# def problem_1a (A, B):
+#     return A + B
+#
+# def problem_1b (A, B, C):
+#     return (np.dot(A,B) - C)
+#
+# def problem_1c (A, B, C):
+#     return ((A * B) + np.transpose(C))
+#
+# def problem_1d (x, y):
+#     return np.dot((np.transpose(x)),y)
+#
+# def problem_1e (A, i):
+#     return np.sum(A[i,::2])
+
+# def problem_1f(A, c, d):
+#     return np.mean(A[np.nonzero((d >= A) & (A >=c))])
+
+# def problem_1g (A, k):
+#     eigenvalues, eigenvectors = LA.eig(A)
+#     return eigenvectors[:, np.argsort(-np.abs(eigenvalues))[:k]]
+
+def problem_1h (x, k, m, s):
+    return
+
+# def problem_1i (A):
+#     return ...
+#
+# def problem_1j (x):
+#     return ...
+#
+# def problem_1k (x, k):
+#     return ...
+#
+# def problem_1l (X, Y):
+#     return ...
+
+
+A = np.array([[1, 4, 5],
+              [5, 8, 9],
+              [6, 7, 11]])
+
+print(problem_1h(A, 2))
+>>>>>>> 26c5e21d8eb68b29175eb1eb1a1db3b5cdd6eb89
