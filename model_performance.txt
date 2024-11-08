@@ -1,2 +1,0 @@
-Unregularized Test Loss: 0.4691
-Test Accuracy: 0.8351
